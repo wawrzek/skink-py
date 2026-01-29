@@ -258,6 +258,7 @@ class WebSocketServerManager(QObject):
     client_connected = pyqtSignal(str)
     client_disconnected = pyqtSignal(str)
     log_message = pyqtSignal(str)
+    log_message_tx = pyqtSignal(str)
 
     def __init__(self, host: str = "127.0.0.1", port: int = 20111):
         super().__init__()
@@ -350,7 +351,7 @@ class WebSocketServerManager(QObject):
                         payload = base64.b64decode(message_data)
                     else:
                         payload = bytes.fromhex(message_data)
-
+                    self.log_message_tx.emit(f"Sending to EV3 ({len(payload)} bytes): {payload.hex()}")
                     self.ev3_manager.send_data(payload)
 
                 self.send_jsonrpc_response(client_id, msg_id, len(payload) if message_data else 0)
@@ -476,6 +477,7 @@ class MainWindow(QMainWindow):
         self.ws_server.client_connected.connect(self.on_client_connected)
         self.ws_server.client_disconnected.connect(self.on_client_disconnected)
         self.ws_server.log_message.connect(self.log_message)
+        self.ws_server.log_message_tx.connect(lambda msg: self.log_message(msg, "tx"))
 
         if self.ws_server.start():
             self.log_message("Server started!")
