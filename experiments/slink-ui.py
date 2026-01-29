@@ -4,7 +4,7 @@ import sys
 import json
 import logging
 from typing import Optional, Dict
-from PyQt6.QtWidgets import QApplication, QMainWindow, QTextEdit, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QApplication, QMainWindow, QTextEdit, QVBoxLayout, QWidget, QLabel
 from PyQt6.QtCore import QObject, pyqtSignal
 from PyQt6.QtWebSockets import QWebSocketServer, QWebSocket
 from PyQt6.QtNetwork import QHostAddress
@@ -434,6 +434,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+
         self.setWindowTitle("Scratch-Link PyQt6 (EV3 Edition)")
         self.setGeometry(100, 100, 700, 500)
 
@@ -441,10 +442,29 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
 
+        self.log_label = QLabel("Main log Display")
+        layout.addWidget(self.log_label)
         self.log_display = QTextEdit()
         self.log_display.setReadOnly(True)
         layout.addWidget(self.log_display)
 
+        self.log_label_rx = QLabel("RX log Display (from EV3)")
+        layout.addWidget(self.log_label_rx)
+        self.log_display_rx = QTextEdit()
+        self.log_display_rx.setReadOnly(True)
+        layout.addWidget(self.log_display_rx)
+
+        self.log_label_tx = QLabel("TX log Display (from Scratch)")
+        layout.addWidget(self.log_label_tx)
+        self.log_display_tx = QTextEdit()
+        self.log_display_tx.setReadOnly(True)
+        layout.addWidget(self.log_display_tx)
+
+        self.log_display_list = {
+                "main": self.log_display,
+                "rx": self.log_display_rx,
+                "tx": self.log_display_tx,
+                }
         self.ev3_manager = EV3BluetoothManager()
         self.ev3_manager.device_discovered.connect(self.on_device_discovered)
         self.ev3_manager.connection_status.connect(self.log_message)
@@ -463,9 +483,9 @@ class MainWindow(QMainWindow):
         else:
             self.log_message("ERROR: Failed to start server!")
 
-    def log_message(self, message: str):
+    def log_message(self, message: str, display: str="main"):
         """Add message to log display"""
-        self.log_display.append(message)
+        self.log_display_list[display].append(message)
 
     def on_device_discovered(self, device_info: dict):
         """Handle discovered EV3 device"""
@@ -488,7 +508,7 @@ class MainWindow(QMainWindow):
 
     def on_ev3_data(self, data: bytes):
         """Handle data received from EV3"""
-        self.log_message(f"EV3 data ({len(data)} bytes): {data.hex()}")
+        self.log_message(f"EV3 data ({len(data)} bytes): {data.hex()}", "rx")
         import base64
         self.ws_server.send_jsonrpc_notification("characteristicDidChange", {
             "message": base64.b64encode(data).decode('utf-8'),
