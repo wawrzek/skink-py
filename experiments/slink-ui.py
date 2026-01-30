@@ -186,6 +186,8 @@ class EV3BluetoothManager(QObject):
         """Handle disconnection"""
         logger.info("Disconnected from EV3")
         self.connection_status.emit("Disconnected")
+        self.ws_server.send_jsonrpc_notification( "didDisconnectPeripheral",
+            {"peripheralId": self.ev3_manager.connected_device})
 
     def _on_error(self, error):
         """Handle connection errors"""
@@ -292,6 +294,11 @@ class WebSocketServerManager(QObject):
     def on_new_connection(self):
         """Handle new WebSocket connection"""
         client = self.server.nextPendingConnection()
+
+        request_url = client.requestUrl()
+        logger.info(f"WebSocket connection - URL: {request_url.toString()}")
+        logger.info(f"WebSocket connection - Path: {request_url.path()}")
+
         client_id = f"{client.peerAddress().toString()}:{client.peerPort()}"
 
         self.clients[client_id] = client
@@ -344,6 +351,7 @@ class WebSocketServerManager(QObject):
             elif method == "send":
                 message_data = params.get("message", "")
                 encoding = params.get("encoding", "base64")
+                logger.info(f">>> SEND params: {params}")
 
                 if self.ev3_manager and message_data:
                     if encoding == "base64":
@@ -494,7 +502,10 @@ class MainWindow(QMainWindow):
         name = device_info.get("name", "Unknown")
         address = device_info.get("address", "")
         self.log_message(f"Found device: {name} ({address})")
-        self.ws_server.send_jsonrpc_notification("didDiscoverPeripheral", device_info)
+        self.ws_server.send_jsonrpc_notification(
+                "didDiscoverPeripheral",
+                device_info
+                )
 
     def on_client_connected(self, client_id: str):
         """Handle WebSocket client connection"""
@@ -503,19 +514,35 @@ class MainWindow(QMainWindow):
     def on_client_disconnected(self, client_id: str):
         """Handle WebSocket client disconnection"""
         self.log_message(f"Scratch disconnected: {client_id}")
+        self.ws_server.send_jsonrpc_notification(
+                "didDisconnectPeripheral",
+            {
+                "peripheralId": self.ev3_manager.connected_device
+                }
+            )
 
     def on_ev3_connected(self):
         """Handle EV3 connection"""
         self.log_message("Successfully connected to EV3!")
+        self.ws_server.send_jsonrpc_notification(
+                "didConnectPeripheral",
+            {
+                "peripheralId": self.ev3_manager.connected_device
+                }
+            )
 
     def on_ev3_data(self, data: bytes):
         """Handle data received from EV3"""
         self.log_message(f"EV3 data ({len(data)} bytes): {data.hex()}", "rx")
         import base64
-        self.ws_server.send_jsonrpc_notification("characteristicDidChange", {
-            "message": base64.b64encode(data).decode('utf-8'),
-            "encoding": "base64"
-        })
+        self.ws_server.send_jsonrpc_notification(
+            "didReceiveMessage",
+            {
+                "message": base64.b64encode(data).decode("utf-8"),
+                "encoding": "base64",
+            },
+        )
+
 
     def closeEvent(self, event):
         """Handle window close event"""
