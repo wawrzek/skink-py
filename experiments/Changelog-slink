@@ -57,7 +57,7 @@ Now when you discover devices, they're stored, and when Scratch tries to connect
 
 # Slink 7
 
-## Repating logs lines
+## Repeating logs lines
 
 ### Problem
 
@@ -118,9 +118,8 @@ Classic BT internally, but haven't told Claude abot it yet._
 AttributeError: type object 'QBluetoothSocket' has no attribute 'RfcommSocket
 ```
 
-Claude suggested a change which lead to another issue and yet another wrong
-suggetstion.
-In the end the right improvment was:
+Claude suggested a change which lead to another issue and yet another wrong suggestion.
+In the end the right improvement was:
 
 ### Key changes
 
