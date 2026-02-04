@@ -55,6 +55,7 @@ python skink.py
 * https://github.com/scratux-revived/scratux - a bit updated version of Scratux
 * https://www.lego.com/cdn/cs/set/assets/blt6879b00ae6951482/LEGO_MINDSTORMS_EV3_Communication_Developer_Kit.pdf - EV3 Communication Developer Kit
 * https://doc.qt.io/qtforpython-6/overviews/qtbluetooth-overview.html - Py QT Bluetooth overview
+* https://github.com/kawasaki/pyscrlink - original sratch-link Linux implementation
 
 # Experiments
 
